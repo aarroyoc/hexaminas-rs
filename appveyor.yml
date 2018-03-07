@@ -1,4 +1,4 @@
- Appveyor configuration template for Rust using rustup for Rust installation
+#Appveyor configuration template for Rust using rustup for Rust installation
 # https://github.com/starkat99/appveyor-rust
 
 ## Operating System (VM environment) ##
