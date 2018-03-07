@@ -205,17 +205,17 @@ impl Table {
                     let mut poligono = Vec::new();
                     poligono.push([angle.sin()*radio,0.0]);
                     poligono.push([angle.sin()*radio+radio,0.0]);
-                    poligono.push([radio*2.0,radio]);
-                    poligono.push([angle.sin()*radio+radio,radio*2.0]);
-                    poligono.push([angle.sin()*radio,radio*2.0]);
-                    poligono.push([0.0,radio]);
+                    poligono.push([radio*2.0,angle.cos()*radio]);
+                    poligono.push([angle.sin()*radio+radio,angle.cos()*radio*2.0]);
+                    poligono.push([angle.sin()*radio,angle.cos()*radio*2.0]);
+                    poligono.push([0.0,angle.cos()*radio]);
 
                     poligono = poligono.into_iter().map(|mut x|{
                         if i % 2 == 1 {
                             x[0] += radio*1.5;
                         }
                         x[0]+=radio*3.0*(j as f64);
-                        x[1]+=radio*(i as f64);
+                        x[1]+=angle.cos()*radio*(i as f64);
                         x
                     }).collect();
 
@@ -229,7 +229,7 @@ impl Table {
         None
     }
 
-    pub fn draw(&mut self,glyphs: &mut Glyphs,c: &Context, g: &mut G2d) 
+    pub fn draw(&mut self,hex: &G2dTexture,glyphs: &mut Glyphs,c: &Context, g: &mut G2d) 
     {
         let radio: f64 = self.radio(&c);
         self.radio = radio;
@@ -241,19 +241,20 @@ impl Table {
                     let mut poligono = Vec::new();
                     poligono.push([angle.sin()*radio,0.0]);
                     poligono.push([angle.sin()*radio+radio,0.0]);
-                    poligono.push([radio*2.0,radio]);
-                    poligono.push([angle.sin()*radio+radio,radio*2.0]);
-                    poligono.push([angle.sin()*radio,radio*2.0]);
-                    poligono.push([0.0,radio]);
+                    poligono.push([radio*2.0,angle.cos()*radio]);
+                    poligono.push([angle.sin()*radio+radio,angle.cos()*radio*2.0]);
+                    poligono.push([angle.sin()*radio,angle.cos()*radio*2.0]);
+                    poligono.push([0.0,angle.cos()*radio]);
 
                     poligono = poligono.into_iter().map(|mut x|{
                         if i % 2 == 1 {
                             x[0] += radio*1.5;
                         }
                         x[0]+=radio*3.0*(j as f64);
-                        x[1]+=radio*(i as f64);
+                        x[1]+=angle.cos()*radio*(i as f64);
                         x
                     }).collect();
+
                     match self.matrix[i][j]{
                         Mine::Reveal(n) => {
                             polygon([0.0,1.0,0.0,1.0],poligono.as_slice(),c.transform,g);
@@ -264,9 +265,9 @@ impl Table {
                                     x += radio*1.5;
                                 }
                                 x+=radio*3.0*(j as f64);
-                                y+=radio*(i as f64);
+                                y+=angle.cos()*radio*(i as f64);
 
-                                text([0.0,0.0,1.0,1.0],16,format!("{}",n).as_str(),glyphs,c.transform.trans(x,y),g).unwrap();
+                                text([0.0,0.0,1.0,1.0],20,format!("{}",n).as_str(),glyphs,c.transform.trans(x-5.0,y),g).unwrap();
                             }
                         },
                         Mine::Flag(_) => {
@@ -277,9 +278,9 @@ impl Table {
                                 x += radio*1.5;
                             }
                             x+=radio*3.0*(j as f64);
-                            y+=radio*(i as f64);
+                            y+=angle.cos()*radio*(i as f64);
 
-                            text([0.0,0.0,1.0,1.0],16,"F",glyphs,c.transform.trans(x,y),g).unwrap();
+                            text([0.0,0.0,1.0,1.0],16,"F",glyphs,c.transform.trans(x-5.0,y),g).unwrap();
                         },
                         Mine::HexCell(_) => polygon([1.0,0.0,0.0,1.0],poligono.as_slice(),c.transform,g),
                         _ => (),

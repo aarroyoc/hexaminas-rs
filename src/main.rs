@@ -18,13 +18,14 @@ fn main() {
     let mut cursor = [0.0,0.0];
     let factory = window.factory.clone();
     let mut glyphs = Glyphs::new("NotoSans-Regular.ttf", factory, TextureSettings::new()).unwrap();
+    let hex: G2dTexture = Texture::from_path(&mut window.factory,"Hex.png",Flip::None,&TextureSettings::new()).unwrap();
     let mut gameover = false;
     let mut victory = false;
     while let Some(e) = window.next() {
         if !gameover{  
             window.draw_2d(&e, |c, mut g| {
                 clear([1.0; 4], g);
-                table.draw(&mut glyphs,&c,&mut g);
+                table.draw(&hex,&mut glyphs,&c,&mut g);
             });
             if let Some(Button::Mouse(button)) = e.press_args() {
                 if let Some(pos) = table.select(&cursor){
