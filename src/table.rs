@@ -2,8 +2,10 @@ use piston_window::*;
 use rand;
 use rand::distributions::{IndependentSample, Range};
 use mine::Mine;
+use piston_window::character::CharacterCache;
 
 use std::f64;
+use std;
 
 pub struct Table{
     matrix: Vec<Vec<Mine>>,
@@ -91,6 +93,77 @@ impl Table {
         c
     }
 
+    pub fn flag(&mut self, pos: [usize;2]){
+        let x = pos[0];
+        let y = pos[1];
+        self.matrix[x][y] = match &self.matrix[x][y] {
+            &Mine::Flag(w) => Mine::HexCell(w),
+            &Mine::HexCell(w) => Mine::Flag(w),
+            &Mine::Reveal(w) => Mine::Reveal(w),
+            &Mine::OutOfTable => Mine::OutOfTable
+        };
+    }
+
+    pub fn victory(&mut self) -> bool{
+        for i in 0..self.matrix.len(){
+            for j in 0..self.matrix[i].len(){
+                match &self.matrix[i][j]{
+                    &Mine::HexCell(false) =>{
+                        return false;   
+                    },
+                    _ => ()
+                };
+            }
+        }
+        true
+    }
+
+    pub fn reveal(&mut self, pos: [usize;2]) {
+        let x = pos[0];
+        let mut y = pos[1];
+        if std::mem::discriminant(&self.matrix[x][y]) == std::mem::discriminant(&Mine::Reveal(5)){
+            return;
+        }
+        if std::mem::discriminant(&self.matrix[x][y]) == std::mem::discriminant(&Mine::Flag(true)){
+            return;
+        }
+        let mines = self.get_mines_around(pos);
+        self.matrix[x][y] = Mine::Reveal(mines);
+        if mines == 0 {
+            // RECURSIVAMENTE HACER REVEAL EN LAS CASILLAS DE ALREDEDOR
+            // COMPROBAR QUE NO ESTAN YA REVELADOS
+            // MEJORAR ESTO PARA NO REPETIR CÓDIGO
+            if x > 1 {
+                self.reveal([x-2,y]); // ARRIBA
+            }
+            if x < self.matrix.len() -2 {
+                self.reveal([x+2,y]); // ABAJO
+            }
+
+            y += x % 2;
+            // FILA SUPERIOR
+            if x > 0 && y > 0{
+                self.reveal([x-1,y-1]); // IZQUIERDA
+            }
+            if x > 0 && y < self.matrix[x-1].len() {
+                self.reveal([x-1,y]); // DERECHA
+            }
+            // FILA INFERIOR
+            if x < self.matrix.len() -1  && y > 0 {
+                self.reveal([x+1,y-1]); // IZQUIERDA
+            }
+            if x < self.matrix.len() -1 && y < self.matrix[x+1].len(){
+                self.reveal([x+1,y]); // DERECHA
+            }
+        }
+    }
+
+    pub fn is_mine(&self,pos: [usize;2]) -> bool{
+        let x = pos[0];
+        let y = pos[1];
+        self.matrix[x][y].is_mine()
+    }
+
     pub fn get_mines_around(&self,pos: [usize;2]) -> i32{
         let mut mines = 0;
         let x = pos[0];
@@ -156,7 +229,8 @@ impl Table {
         None
     }
 
-    pub fn draw(&mut self,c: &Context, g: &mut G2d) {
+    pub fn draw(&mut self,glyphs: &mut Glyphs,c: &Context, g: &mut G2d) 
+    {
         let radio: f64 = self.radio(&c);
         self.radio = radio;
         let angle: f64 = f64::consts::FRAC_PI_6;
@@ -180,13 +254,37 @@ impl Table {
                         x[1]+=radio*(i as f64);
                         x
                     }).collect();
-                    if self.matrix[i][j].mine() > 0 {
-                        polygon([0.0,0.0,1.0,1.0],poligono.as_slice(),c.transform,g);
-                    }else if i % 2 == 0 {
-                        polygon([1.0,0.0,0.0,1.0],poligono.as_slice(),c.transform,g);
-                    } else {
-                        polygon([0.0,1.0,0.0,1.0],poligono.as_slice(),c.transform,g);
-                    }
+                    match self.matrix[i][j]{
+                        Mine::Reveal(n) => {
+                            polygon([0.0,1.0,0.0,1.0],poligono.as_slice(),c.transform,g);
+                            if n > 0 {
+                                let mut x = radio;
+                                let mut y = radio;
+                                if i % 2 == 1 {
+                                    x += radio*1.5;
+                                }
+                                x+=radio*3.0*(j as f64);
+                                y+=radio*(i as f64);
+
+                                text([0.0,0.0,1.0,1.0],16,format!("{}",n).as_str(),glyphs,c.transform.trans(x,y),g).unwrap();
+                            }
+                        },
+                        Mine::Flag(_) => {
+                            polygon([1.0,0.0,0.0,1.0],poligono.as_slice(),c.transform,g);
+                            let mut x = radio;
+                            let mut y = radio;
+                            if i % 2 == 1 {
+                                x += radio*1.5;
+                            }
+                            x+=radio*3.0*(j as f64);
+                            y+=radio*(i as f64);
+
+                            text([0.0,0.0,1.0,1.0],16,"F",glyphs,c.transform.trans(x,y),g).unwrap();
+                        },
+                        Mine::HexCell(_) => polygon([1.0,0.0,0.0,1.0],poligono.as_slice(),c.transform,g),
+                        _ => (),
+                    };
+                    
                 }
             }
         }

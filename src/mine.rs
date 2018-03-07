@@ -4,7 +4,7 @@
 pub enum Mine{
     HexCell(bool),
     Flag(bool),
-    Question(bool),
+    Reveal(i32),
     OutOfTable,
 }
 
@@ -13,7 +13,7 @@ impl Mine {
         match self {
             &Mine::HexCell(m) => if m { 1 } else { 0},
             &Mine::Flag(m) => if m { 1 } else {0},
-            &Mine::Question(m) => if m { 1 } else {0},
+            &Mine::Reveal(_) => 0,
             &Mine::OutOfTable => 0
         }
     }
@@ -22,7 +22,7 @@ impl Mine {
         match self {
             &Mine::HexCell(m) => m,
             &Mine::Flag(m) => m,
-            &Mine::Question(m) => m,
+            &Mine::Reveal(_) => false,
             &Mine::OutOfTable => false
         }
     }
